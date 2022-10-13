@@ -42,6 +42,9 @@ void ICalendar::LoadFromFile() {
 					NewEvent = new Event;
 					CurrentComponent = VEVENT;
 				}
+                if (Line.find("TZID:") == 0) {
+                    this->tz = GetProperty(Line);
+                }
 				break;
 
 			case VEVENT:
@@ -95,6 +98,10 @@ void ICalendar::LoadFromFile() {
 	}
 
 	File.close();
+}
+
+std::string ICalendar::GetTimeZone() {
+    return this->tz;
 }
 
 /*Event* ICalendar::GetEventByUID(char *UID) {

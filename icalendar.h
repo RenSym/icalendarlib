@@ -25,7 +25,8 @@ public:
 	void ModifyEvent(Event *ModifiedEvent);
 
 	class Query;
-	
+    std::string GetTimeZone();
+
 private:
 	string GetProperty(const string &Line) const {
 		// if VALUE=DATE or VALUE=DATE-TIME used, then the date is not directly
@@ -48,8 +49,9 @@ private:
 			Line.resize(Length-1);
 		Line += "\r\n";
 	}
-	
+
 	char *FileName;
+    std::string tz;
 	list<Event *> Events;
 };
 
