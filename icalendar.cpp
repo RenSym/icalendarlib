@@ -263,7 +263,7 @@ void ICalendar::ModifyEvent(Event *ModifiedEvent) {
 /// ICalendar::Query
 
 Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
-	static Event *RecurrentEvent = NULL;
+
 	/* not all events have DtEnd, but we need some DtEnd for various checks,
 	   so we will use this for temporary DtEnd derived from DtStart (following
 	   RFC 2445, 4.6.1) */
@@ -271,7 +271,7 @@ Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
 	unsigned long Difference;
 	unsigned short Rest;
 
-	if (RecurrentEvent != NULL) {
+	if (!RecurrentEvent->UID.empty()) {
 		RecurrentEvent->DtStart[RecurrentEvent->RRule.Freq] += RecurrentEvent->RRule.Interval;
 		if (!RecurrentEvent->DtEnd.IsEmpty())
 			RecurrentEvent->DtEnd[RecurrentEvent->RRule.Freq] += RecurrentEvent->RRule.Interval;
@@ -288,11 +288,10 @@ Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
 			return RecurrentEvents.back();
 		}
 
-		delete RecurrentEvent;
-		RecurrentEvent = NULL;
+		RecurrentEvent = nullptr;
 	}
 
-	if (RecurrentEvent == NULL) {
+	if (RecurrentEvent->UID.empty()) {
 		for (; EventsIterator != Calendar->Events.end(); ++EventsIterator) {
 			if ((*EventsIterator)->DtEnd.IsEmpty()) {
 				DtEnd = (*EventsIterator)->DtStart;
@@ -312,7 +311,7 @@ Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
 			(WithAlarm && (*EventsIterator)->HasAlarm(Criteria.From, Criteria.To))
 			) {
 				if (Criteria.AllEvents == false && Criteria.IncludeRecurrent == true && (*EventsIterator)->RRule.IsEmpty() == false)
-					RecurrentEvent = new Event(**EventsIterator);
+					RecurrentEvent = make_shared<Event>(**EventsIterator);
 				return *(EventsIterator++);
 
 			} else if (
@@ -321,7 +320,7 @@ Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
 			((*EventsIterator)->RRule.Until.IsEmpty() || (*EventsIterator)->RRule.Until >= Criteria.From) &&
 			Criteria.IncludeRecurrent == true
 			) {
-				RecurrentEvent = new Event(**EventsIterator);
+				RecurrentEvent = make_shared<Event>(**EventsIterator);
 
 				Difference = Criteria.From.Difference(DtEnd, RecurrentEvent->RRule.Freq);
 				Rest = Difference%RecurrentEvent->RRule.Interval;
@@ -357,7 +356,6 @@ Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
 					return RecurrentEvents.back();
 				}
 
-				delete RecurrentEvent;
 				RecurrentEvent = NULL;
 			}
 		}

@@ -69,6 +69,7 @@ public:
 	EventsCriteria Criteria;
 	
 private:
+    shared_ptr<Event> RecurrentEvent = make_shared<Event>();
 	ICalendar *Calendar;
 	list<Event *> RecurrentEvents;
 	list<Event *>::iterator EventsIterator;
