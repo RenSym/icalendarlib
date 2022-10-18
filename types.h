@@ -74,7 +74,7 @@ struct Event {
 	operator string() const;
 	bool HasAlarm(const Date &From, const Date &To);
 
-	string UID, Summary, Description, Categories;
+	string UID, Summary, Description, Categories, tz{};
 	Date DtStamp, DtStart, DtEnd;
 	Recurrence RRule;
 	list<Alarm> *Alarms;

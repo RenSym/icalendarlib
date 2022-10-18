@@ -1,4 +1,6 @@
 #include "icalendar.h"
+#include "date/date.h"  // C++20's timezone isn't supported by most compilers yet...
+
 #include <iostream>
 
 void ICalendar::LoadFromFile() {
@@ -23,6 +25,15 @@ void ICalendar::LoadFromFile() {
 
 		return;
 	}
+
+    auto ConvertToUTC = [] (const string& icalFormat, const string& tz) {
+        date::local_seconds time;
+        std::istringstream icalTime{icalFormat};
+        icalTime >> date::parse("%Y%m%dT%H%M%S", time);
+
+        auto utc = date::make_zoned(tz, time, date::choose::earliest).get_sys_time();
+        return date::format(std::locale("C"), "%Y%m%dT%H%M%S", utc);
+    };
 
 	getline(File, NextLine);
 
@@ -55,9 +66,21 @@ void ICalendar::LoadFromFile() {
 				} else if (Line.find("DTSTAMP") == 0) {
 					NewEvent->DtStamp = GetProperty(Line);
 				} else if (Line.find("DTSTART") == 0) {
-					NewEvent->DtStart = GetProperty(Line);
+                    NewEvent->tz = GetSubProperty(Line, "TZID");
+                    if (NewEvent->tz.empty()) {
+                        NewEvent->DtStart = GetProperty(Line);
+                    }
+                    else {
+                        NewEvent->DtStart = ConvertToUTC(GetProperty(Line), NewEvent->tz);
+                    }
 				} else if (Line.find("DTEND") == 0) {
-					NewEvent->DtEnd = GetProperty(Line);
+                    NewEvent->tz = GetSubProperty(Line, "TZID");
+                    if (NewEvent->tz.empty()) {
+                        NewEvent->DtEnd = GetProperty(Line);
+                    }
+                    else {
+                        NewEvent->DtEnd = ConvertToUTC(GetProperty(Line), NewEvent->tz);
+                    }
 				} else if (Line.find("DESCRIPTION") == 0) {
 					NewEvent->Description = GetProperty(Line);
 				} else if (Line.find("CATEGORIES") == 0) {
@@ -96,7 +119,6 @@ void ICalendar::LoadFromFile() {
 				break;
 		}
 	}
-
 	File.close();
 }
 
@@ -288,7 +310,7 @@ Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
 			return RecurrentEvents.back();
 		}
 
-		RecurrentEvent = nullptr;
+		RecurrentEvent = make_shared<Event>();
 	}
 
 	if (RecurrentEvent->UID.empty()) {
@@ -356,7 +378,7 @@ Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
 					return RecurrentEvents.back();
 				}
 
-				RecurrentEvent = NULL;
+				RecurrentEvent = make_shared<Event>();
 			}
 		}
 	}
