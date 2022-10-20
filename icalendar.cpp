@@ -256,7 +256,6 @@ void ICalendar::ModifyEvent(Event *ModifiedEvent) {
 /// ICalendar::Query
 
 Event* ICalendar::Query::GetNextEvent(bool WithAlarm) {
-	static Event *RecurrentEvent = NULL;
 	/* not all events have DtEnd, but we need some DtEnd for various checks,
 	   so we will use this for temporary DtEnd derived from DtStart (following
 	   RFC 2445, 4.6.1) */

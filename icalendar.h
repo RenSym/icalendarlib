@@ -68,6 +68,7 @@ public:
 	
 private:
 	ICalendar *Calendar;
+    Event *RecurrentEvent = NULL;
 	list<Event *> RecurrentEvents;
 	list<Event *>::iterator EventsIterator;
 };
