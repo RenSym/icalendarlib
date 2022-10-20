@@ -61,6 +61,8 @@ struct Event {
 		DtStamp(Base.DtStamp),
 		DtStart(Base.DtStart),
 		DtEnd(Base.DtEnd),
+        TimezoneStart(Base.TimezoneStart),
+        TimezoneEnd(Base.TimezoneEnd),
 		RRule(Base.RRule),
 		Alarms(Base.Alarms),
 		RecurrenceNo(Base.RecurrenceNo)
