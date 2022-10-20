@@ -52,9 +52,11 @@ void ICalendar::LoadFromFile() {
 				} else if (Line.find("DTSTAMP") == 0) {
 					NewEvent->DtStamp = GetProperty(Line);
 				} else if (Line.find("DTSTART") == 0) {
-					NewEvent->DtStart = GetProperty(Line);
+                    NewEvent->TimezoneStart = GetSubProperty(Line, "TZID");
+                    NewEvent->DtStart = GetProperty(Line);
 				} else if (Line.find("DTEND") == 0) {
-					NewEvent->DtEnd = GetProperty(Line);
+                    NewEvent->TimezoneEnd = GetSubProperty(Line, "TZID");
+                    NewEvent->DtStart = GetProperty(Line);
 				} else if (Line.find("DESCRIPTION") == 0) {
 					NewEvent->Description = GetProperty(Line);
 				} else if (Line.find("CATEGORIES") == 0) {
