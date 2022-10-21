@@ -15,7 +15,7 @@ void ICalendar::LoadFromString(const string& input) {
     auto unfold = [] (string seed) {
         std::list<string> result;
         while(!seed.empty()) {
-            auto pos = seed.find("\r\n");
+            auto pos = seed.find('\n');
             if (seed.starts_with('\t') || seed.starts_with(' ')) {
                 result.back() += seed.substr(1, pos);
             }
