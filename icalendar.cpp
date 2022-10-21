@@ -1,6 +1,108 @@
 #include "icalendar.h"
 #include <iostream>
 
+void ICalendar::LoadFromString(const string& input) {
+    if (input.empty()) {
+        return;
+    }
+    string Line, NextLine;
+    Component CurrentComponent = VCALENDAR, PrevComponent = VCALENDAR;
+    Event *NewEvent = NULL;
+    Alarm NewAlarm;
+    // for getting some UIDs for events without them
+    unsigned int NoUID = 0;
+
+    auto unfold = [] (string seed) {
+        std::list<string> result;
+        while(!seed.empty()) {
+            auto pos = seed.find("\r\n");
+            if (seed.starts_with('\t') || seed.starts_with(' ')) {
+                result.back() += seed.substr(1, pos);
+            }
+            else {
+                result.push_back(seed.substr(0, pos));
+            }
+            seed = seed.substr(pos + 2);
+        }
+        return result;
+    };
+
+    auto take = [] (std::list<string>::iterator& iter) {
+        string result = *iter;
+        ++iter;
+        return result;
+    };
+
+    auto iCalList = unfold(input);
+
+    auto iCalIterator = iCalList.begin();
+    NextLine = take(iCalIterator);
+
+    while (iCalIterator != iCalList.end()) {
+        Line = NextLine;
+        NextLine = take(iCalIterator);
+
+        switch (CurrentComponent) {
+            case VCALENDAR:
+                if (Line.find("BEGIN:VEVENT") == 0) {
+                    NewEvent = new Event;
+                    CurrentComponent = VEVENT;
+                }
+                break;
+
+            case VEVENT:
+                if (Line.find("UID") == 0) {
+                    NewEvent->UID = GetProperty(Line);
+                } else if (Line.find("SUMMARY") == 0) {
+                    NewEvent->Summary = GetProperty(Line);
+                } else if (Line.find("DTSTAMP") == 0) {
+                    NewEvent->DtStamp = GetProperty(Line);
+                } else if (Line.find("DTSTART") == 0) {
+                    NewEvent->TimezoneStart = GetSubProperty(Line, "TZID");
+                    NewEvent->DtStart = GetProperty(Line);
+                } else if (Line.find("DTEND") == 0) {
+                    NewEvent->TimezoneEnd = GetSubProperty(Line, "TZID");
+                    NewEvent->DtEnd = GetProperty(Line);
+                } else if (Line.find("DESCRIPTION") == 0) {
+                    NewEvent->Description = GetProperty(Line);
+                } else if (Line.find("CATEGORIES") == 0) {
+                    NewEvent->Categories = GetProperty(Line);
+                } else if (Line.find("RRULE") == 0) {
+                    NewEvent->RRule.Freq = ConvertFrequency(GetSubProperty(Line, "FREQ"));
+                    NewEvent->RRule.Interval = atoi(GetSubProperty(Line, "INTERVAL").c_str());
+                    if (NewEvent->RRule.Interval == 0)
+                        NewEvent->RRule.Interval = 1;
+                    NewEvent->RRule.Count = atoi(GetSubProperty(Line, "COUNT").c_str());
+                    NewEvent->RRule.Until = GetSubProperty(Line, "UNTIL");
+                } else if (Line.find("BEGIN:VALARM") == 0) {
+                    NewAlarm.Clear();
+                    PrevComponent = CurrentComponent;
+                    CurrentComponent = VALARM;
+                } else if (Line.find("END:VEVENT") == 0) {
+                    if (NewEvent->UID.empty())
+                        NewEvent->UID = NoUID++;
+
+                    Events.push_back(NewEvent);
+                    CurrentComponent = VCALENDAR;
+                }
+                break;
+
+            case VALARM:
+                if (Line.find("ACTION") == 0) {
+                    NewAlarm.Action = ConvertAlarmAction(GetProperty(Line));
+                } else if (Line.find("TRIGGER") == 0) {
+                    NewAlarm.Trigger = GetProperty(Line);
+                } else if (Line.find("DESCRIPTION") == 0) {
+                    NewAlarm.Description = GetProperty(Line);
+                } else if (Line.find("END:VALARM") == 0) {
+                    NewEvent->Alarms->push_back(NewAlarm);
+                    CurrentComponent = PrevComponent;
+                }
+                break;
+        }
+    }
+}
+
 void ICalendar::LoadFromFile() {
 	string Line, NextLine;
 	Component CurrentComponent = VCALENDAR, PrevComponent = VCALENDAR;

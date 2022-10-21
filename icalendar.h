@@ -13,10 +13,13 @@ using namespace std;
 class ICalendar {
 public:
 	ICalendar(const char *FileName): FileName((char *)FileName) { LoadFromFile(); }
+    ICalendar(const string& input) { LoadFromString(input); };
 	~ICalendar() {
 		for_each(Events.begin(), Events.end(), DeleteItem());
 	}
 	void LoadFromFile();
+    void LoadFromString(const string& input);
+
 
 	//Event* GetEventByUID(char *UID);
 
