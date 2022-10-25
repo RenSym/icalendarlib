@@ -22,9 +22,13 @@ void ICalendar::LoadFromString(const string& input) {
             else {
                 result.push_back(seed.substr(0, pos));
             }
-            seed = seed.substr(pos + 2);
+            try {
+                seed = seed.substr(pos + 2);
+            }
+            catch (std::out_of_range ex) {
+                return result;
+            }
         }
-        return result;
     };
 
     auto take = [] (std::list<string>::iterator& iter) {
